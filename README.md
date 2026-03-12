@@ -1,6 +1,5 @@
 # FakeShield – Fake Product & Review Detection System
-**BCA Project | Koshys Institute of Management Studies**
-Student: Devika.B (U19BU23S0135) | Guide: Ms. Greeshma S.S
+
 
 ---
 
