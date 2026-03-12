@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Reports – FakeShield{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Fake Review Report</h1>
+    <p>Summary of all detected fake reviews and risk statistics.</p>
+</div>
+
+<!-- Overall Stats -->
+<div class="stats-bar" style="margin-bottom:2rem">
+    <div class="stat-item">
+        <div class="stat-num">{{ overall.total or 0 }}</div>
+        <div class="stat-label">Total Reviews</div>
+    </div>
+    <div class="stat-item stat-danger">
+        <div class="stat-num">{{ overall.fake_count or 0 }}</div>
+        <div class="stat-label">Fake Detected</div>
+    </div>
+    <div class="stat-item {% if (overall.fake_pct or 0) > 30 %}stat-danger{% endif %}">
+        <div class="stat-num">{{ overall.fake_pct or 0 }}%</div>
+        <div class="stat-label">Fake Rate</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">{{ overall.avg_risk or 0 }}%</div>
+        <div class="stat-label">Avg Risk Score</div>
+    </div>
+</div>
+
+<!-- Category Breakdown -->
+{% if category_stats %}
+<section class="section">
+    <h2 class="section-title">Risk by Category</h2>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr><th>Category</th><th>Total Reviews</th><th>Fake Count</th><th>Avg Risk Score</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for c in category_stats %}
+                <tr>
+                    <td><strong>{{ c.category or "Uncategorized" }}</strong></td>
+                    <td>{{ c.total }}</td>
+                    <td class="{% if c.fake_count > 0 %}text-danger{% endif %}">{{ c.fake_count }}</td>
+                    <td>
+                        <div class="mini-bar">
+                            <div class="mini-fill {% if (c.avg_risk or 0) >= 60 %}fill-high{% elif (c.avg_risk or 0) >= 30 %}fill-med{% else %}fill-low{% endif %}"
+                                 style="width:{{ c.avg_risk or 0 }}%"></div>
+                        </div>
+                        {{ c.avg_risk or 0 }}%
+                    </td>
+                    <td>
+                        <span class="status-badge {% if (c.avg_risk or 0) >= 50 %}status-danger{% elif (c.avg_risk or 0) >= 25 %}status-warn{% else %}status-ok{% endif %}">
+                            {{ "High Risk" if (c.avg_risk or 0) >= 50 else ("Medium" if (c.avg_risk or 0) >= 25 else "Low Risk") }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- Fake Reviews List -->
+<section class="section">
+    <h2 class="section-title">Detected Fake Reviews</h2>
+    {% if fake_reviews %}
+    <div class="reviews-list">
+        {% for r in fake_reviews %}
+        <div class="review-item review-fake">
+            <div class="ri-header">
+                <div class="ri-user">
+                    <div class="ri-avatar">{{ r.reviewer_name[0] if r.reviewer_name else "?" }}</div>
+                    <div>
+                        <div class="ri-name">{{ r.reviewer_name or "Anonymous" }}</div>
+                        <div class="ri-date">Product: <a href="/product/{{ r.product_id }}">{{ r.product_name }}</a></div>
+                    </div>
+                </div>
+                <div class="ri-right">
+                    <div class="ri-stars">{% for i in range(r.rating) %}★{% endfor %}{% for i in range(5-r.rating) %}☆{% endfor %}</div>
+                    <div class="ri-badge badge-fake">⚠ FAKE</div>
+                    <div class="ri-score">{{ (r.fake_score * 100)|round(1) }}% risk</div>
+                </div>
+            </div>
+            <div class="ri-text">{{ r.review_text }}</div>
+            {% if r.flags_list %}
+            <div class="ri-flags">
+                {% for flag in r.flags_list %}
+                <span class="flag-tag">🚩 {{ flag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <form method="POST" action="/delete_review/{{ r.id }}"
+                  onsubmit="return confirm('Delete this review?')" style="margin-top:0.5rem">
+                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="es-icon">🎉</div>
+        <p>No fake reviews detected yet.</p>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}

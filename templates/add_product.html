@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Add Product – FakeShield{% endblock %}
+{% block content %}
+
+<div class="back-link"><a href="/products">← Back to Products</a></div>
+<div class="page-header">
+    <h1>Add New Product</h1>
+</div>
+
+<div class="form-page-wrap">
+    <form method="POST" action="/add_product">
+        <div class="form-group">
+            <label>Product Name <span class="req">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Wireless Headphones X200" required>
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select name="category" class="form-control">
+                <option value="">— Select Category —</option>
+                <option>Electronics</option>
+                <option>Health</option>
+                <option>Kitchen</option>
+                <option>Sports</option>
+                <option>Beauty</option>
+                <option>Fashion</option>
+                <option>Books</option>
+                <option>Home</option>
+                <option>Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="4"
+                      placeholder="Brief product description..."></textarea>
+        </div>
+        <div class="form-actions">
+            <a href="/products" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Product</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

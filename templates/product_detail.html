@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} – FakeShield{% endblock %}
+{% block content %}
+
+<div class="back-link"><a href="/products">← Back to Products</a></div>
+
+<div class="product-hero">
+    <div>
+        <span class="hero-badge">{{ product.category }}</span>
+        <h1>{{ product.name }}</h1>
+        <p>{{ product.description }}</p>
+    </div>
+    <div class="product-stats-box">
+        <div class="psb-item">
+            <div class="psb-num">{{ stats.total or 0 }}</div>
+            <div class="psb-label">Reviews</div>
+        </div>
+        <div class="psb-item {% if (stats.fake_count or 0) > 0 %}psb-danger{% endif %}">
+            <div class="psb-num">{{ stats.fake_count or 0 }}</div>
+            <div class="psb-label">Fake</div>
+        </div>
+        <div class="psb-item">
+            <div class="psb-num">{{ stats.avg_rating or "—" }}</div>
+            <div class="psb-label">Avg Rating</div>
+        </div>
+        <div class="psb-item {% if (stats.avg_risk or 0) >= 40 %}psb-danger{% endif %}">
+            <div class="psb-num">{{ stats.avg_risk or 0 }}%</div>
+            <div class="psb-label">Avg Risk</div>
+        </div>
+    </div>
+</div>
+
+<div class="section-header" style="margin-top:2rem">
+    <h2 class="section-title">Reviews</h2>
+    <a href="/analyze" class="btn btn-sm btn-primary">+ Analyze New Review</a>
+</div>
+
+{% if reviews %}
+<div class="reviews-list">
+    {% for r in reviews %}
+    <div class="review-item {% if r.is_fake %}review-fake{% endif %}">
+        <div class="ri-header">
+            <div class="ri-user">
+                <div class="ri-avatar">{{ r.reviewer_name[0] if r.reviewer_name else "?" }}</div>
+                <div>
+                    <div class="ri-name">{{ r.reviewer_name or "Anonymous" }}</div>
+                    <div class="ri-date">{{ r.created_at[:10] }}</div>
+                </div>
+            </div>
+            <div class="ri-right">
+                <div class="ri-stars">{% for i in range(r.rating) %}★{% endfor %}{% for i in range(5-r.rating) %}☆{% endfor %}</div>
+                <div class="ri-badge {% if r.is_fake %}badge-fake{% else %}badge-genuine{% endif %}">
+                    {{ "⚠ FAKE" if r.is_fake else "✓ Genuine" }}
+                </div>
+                <div class="ri-score">{{ (r.fake_score * 100)|round(1) }}% risk</div>
+            </div>
+        </div>
+        <div class="ri-text">{{ r.review_text }}</div>
+        {% if r.flags_list %}
+        <div class="ri-flags">
+            {% for flag in r.flags_list %}
+            <span class="flag-tag">🚩 {{ flag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <form method="POST" action="/delete_review/{{ r.id }}"
+              onsubmit="return confirm('Delete this review?')" style="margin-top:0.5rem">
+            <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="es-icon">💬</div>
+    <p>No reviews yet for this product. <a href="/analyze">Analyze one now.</a></p>
+</div>
+{% endif %}
+
+{% endblock %}

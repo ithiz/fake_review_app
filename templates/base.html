@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FakeShield – Review Detection{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <span class="brand-icon">🛡</span>
+        <span class="brand-text">Fake<strong>Shield</strong></span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="/" class="{% if request.path=='/' %}active{% endif %}">Dashboard</a></li>
+        <li><a href="/analyze" class="{% if request.path=='/analyze' %}active{% endif %}">Analyze Review</a></li>
+        <li><a href="/products" class="{% if '/product' in request.path %}active{% endif %}">Products</a></li>
+        <li><a href="/reports" class="{% if request.path=='/reports' %}active{% endif %}">Reports</a></li>
+        <li><a href="/scrape" class="{% if request.path=='/scrape' %}active{% endif %} nav-scrape">🌐 Scrape Live</a></li>
+    </ul>
+    <a href="/analyze" class="nav-cta">+ Analyze Now</a>
+</nav>
+
+<div class="page-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+            {% for cat, msg in messages %}
+                <div class="flash flash-{{cat}}">
+                    <span>{{ "✓" if cat=="success" else "✕" }}</span> {{ msg }}
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<footer>
+    <p>FakeShield &nbsp;·&nbsp; Fake Product & Review Detection System &nbsp;·&nbsp; BCA Project – Koshys Institute of Management Studies</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

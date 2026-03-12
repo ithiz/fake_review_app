@@ -1,0 +1,11 @@
+flask==3.0.3
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.2.2
+fake-useragent==1.5.1
+# Optional – for Meesho/Google Shopping (JS-heavy sites):
+# selenium==4.21.0
+# webdriver-manager==4.0.1

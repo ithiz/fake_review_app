@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Analyze Review – FakeShield{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Analyze a Review</h1>
+    <p>Paste any product review below to check if it's genuine or fake.</p>
+</div>
+
+<div class="analyze-layout">
+    <!-- Form -->
+    <div class="analyze-form-wrap">
+        <form method="POST" action="/analyze" id="analyzeForm">
+            <div class="form-group">
+                <label>Select Product</label>
+                <select name="product_id" class="form-control">
+                    <option value="">— Optional: Link to a product —</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}" {% if form_data.get('product_id')==(p.id|string) %}selected{% endif %}>
+                        {{ p.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Reviewer Name</label>
+                    <input type="text" name="reviewer_name" class="form-control"
+                           placeholder="e.g. John D." value="{{ form_data.get('reviewer_name','') }}">
+                </div>
+                <div class="form-group">
+                    <label>Star Rating</label>
+                    <div class="star-input" id="starInput">
+                        {% for i in range(1,6) %}
+                        <span class="star {% if form_data.get('rating',3)|int >= i %}active{% endif %}"
+                              data-val="{{ i }}">★</span>
+                        {% endfor %}
+                        <input type="hidden" name="rating" id="ratingVal"
+                               value="{{ form_data.get('rating', 3) }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Review Text <span class="req">*</span></label>
+                <textarea name="review_text" id="reviewText" class="form-control"
+                          rows="6" placeholder="Paste the product review here..." required>{{ form_data.get('review_text','') }}</textarea>
+                <div class="char-count"><span id="charCount">0</span> characters</div>
+            </div>
+
+            <!-- Live preview signals -->
+            <div class="live-signals" id="liveSignals" style="display:none">
+                <div class="ls-title">⚡ Live Signals</div>
+                <div id="signalTags"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full">
+                🔍 Analyze Review
+            </button>
+        </form>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="result-panel">
+        {% if result %}
+        <div class="result-card {% if result.is_fake %}result-fake{% else %}result-genuine{% endif %}">
+            <div class="result-header">
+                <div class="result-icon">{{ "⚠" if result.is_fake else "✓" }}</div>
+                <div>
+                    <div class="result-verdict">{{ result.verdict }}</div>
+                    <div class="result-sub">{{ result.risk_level }} Risk</div>
+                </div>
+            </div>
+
+            <div class="score-meter">
+                <div class="score-label">
+                    <span>Fraud Risk Score</span>
+                    <strong>{{ result.confidence }}%</strong>
+                </div>
+                <div class="meter-track">
+                    <div class="meter-fill {% if result.confidence >= 70 %}fill-high{% elif result.confidence >= 40 %}fill-med{% else %}fill-low{% endif %}"
+                         style="width: {{ result.confidence }}%"></div>
+                </div>
+                <div class="meter-scale">
+                    <span>0%</span><span>40% Fake</span><span>100%</span>
+                </div>
+            </div>
+
+            {% if result.flags %}
+            <div class="flags-section">
+                <div class="flags-title">🚩 Detection Flags</div>
+                {% for flag in result.flags %}
+                <div class="flag-item">{{ flag }}</div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-flags">✅ No suspicious patterns detected.</div>
+            {% endif %}
+
+            <div class="result-tip">
+                {% if result.is_fake %}
+                <strong>Recommendation:</strong> This review shows multiple indicators of inauthenticity. Treat with caution.
+                {% else %}
+                <strong>Recommendation:</strong> This review appears genuine with natural language and balanced feedback.
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="result-placeholder">
+            <div class="rp-icon">🔍</div>
+            <div class="rp-text">Your analysis result will appear here after submission.</div>
+            <div class="rp-hint">The system will check for 11+ fake review signals.</div>
+        </div>
+        {% endif %}
+
+        <!-- Detection Criteria -->
+        <div class="criteria-box">
+            <div class="cb-title">Detection Criteria</div>
+            <ul class="cb-list">
+                <li>Excessive exclamation marks</li>
+                <li>All-caps word overuse</li>
+                <li>Repeated characters (loveeee)</li>
+                <li>Superlative overuse</li>
+                <li>Hard-sell / urgency language</li>
+                <li>Sponsored/gifted disclosure</li>
+                <li>Word repetition</li>
+                <li>No negatives in 5-star review</li>
+                <li>Suspicious username patterns</li>
+                <li>Rating-sentiment mismatch</li>
+                <li>Very short extreme reviews</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

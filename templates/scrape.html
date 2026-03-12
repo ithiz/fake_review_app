@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Scrape Live Reviews – FakeShield{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>🌐 Scrape Live Reviews</h1>
+        <p>Paste a product URL from Amazon, Flipkart, Meesho, or Google Shopping to fetch and analyse real reviews instantly.</p>
+    </div>
+</div>
+
+<!-- Supported Sites Banner -->
+<div class="sites-banner">
+    <div class="site-pill site-amazon">
+        <span class="site-icon">🛒</span>
+        <div>
+            <div class="site-name">Amazon India</div>
+            <div class="site-url">amazon.in/dp/…</div>
+        </div>
+        <span class="site-status">Supported</span>
+    </div>
+    <div class="site-pill site-flipkart">
+        <span class="site-icon">🏪</span>
+        <div>
+            <div class="site-name">Flipkart</div>
+            <div class="site-url">flipkart.com/…/p/…</div>
+        </div>
+        <span class="site-status">Supported</span>
+    </div>
+    <div class="site-pill site-meesho">
+        <span class="site-icon">🛍</span>
+        <div>
+            <div class="site-name">Meesho</div>
+            <div class="site-url">meesho.com/…/p/…</div>
+        </div>
+        <span class="site-status">Supported</span>
+    </div>
+    <div class="site-pill site-google">
+        <span class="site-icon">🔍</span>
+        <div>
+            <div class="site-name">Google Shopping</div>
+            <div class="site-url">google.com/shopping/…</div>
+        </div>
+        <span class="site-status">Supported</span>
+    </div>
+</div>
+
+<!-- Scrape Form -->
+<div class="scrape-form-wrap">
+    <form method="POST" action="/scrape" id="scrapeForm">
+        <div class="url-input-row">
+            <div class="url-icon">🔗</div>
+            <input type="url" name="product_url" id="productUrl"
+                   class="url-input"
+                   placeholder="https://www.amazon.in/dp/B09XYZ…  or  https://www.flipkart.com/product/p/itm…"
+                   value="{{ url_input }}" required>
+            <button type="submit" class="btn btn-primary btn-scrape" id="scrapeBtn">
+                <span id="scrapeLabel">Scrape & Analyse</span>
+            </button>
+        </div>
+        <div class="url-hint" id="siteDetect"></div>
+    </form>
+
+    <!-- Loading state -->
+    <div class="scrape-loading" id="scrapeLoading" style="display:none">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Fetching reviews from website…</div>
+        <div class="loading-sub">This may take 10–30 seconds depending on the site.</div>
+    </div>
+</div>
+
+{% if result %}
+<!-- ── Results ─────────────────────────────────────────────────────────────── -->
+<div class="scrape-results">
+
+    <!-- Summary card -->
+    <div class="scrape-summary">
+        <div class="ss-left">
+            <div class="ss-site-badge ss-{{ result.site }}">{{ result.site.replace('_',' ').title() }}</div>
+            <h2 class="ss-product">{{ result.product_name }}</h2>
+            <a href="/product/{{ result.product_id }}" class="btn btn-sm btn-outline" style="margin-top:0.75rem">
+                View Full Product Page →
+            </a>
+        </div>
+        <div class="ss-stats">
+            <div class="ss-stat">
+                <div class="ss-num">{{ result.total }}</div>
+                <div class="ss-label">Reviews Scraped</div>
+            </div>
+            <div class="ss-stat ss-genuine">
+                <div class="ss-num">{{ result.genuine_count }}</div>
+                <div class="ss-label">Genuine</div>
+            </div>
+            <div class="ss-stat ss-fake">
+                <div class="ss-num">{{ result.fake_count }}</div>
+                <div class="ss-label">Fake</div>
+            </div>
+            <div class="ss-stat {% if result.fake_pct >= 50 %}ss-danger{% elif result.fake_pct >= 25 %}ss-warn{% else %}ss-safe{% endif %}">
+                <div class="ss-num">{{ result.fake_pct }}%</div>
+                <div class="ss-label">Fake Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Risk Verdict -->
+    <div class="overall-verdict verdict-{{ result.risk_level.lower() }}">
+        <div class="ov-icon">
+            {% if result.risk_level == 'High' %}⛔{% elif result.risk_level == 'Medium' %}⚠{% else %}✅{% endif %}
+        </div>
+        <div class="ov-body">
+            <div class="ov-title">
+                {% if result.risk_level == 'High' %}
+                    High Fake Review Activity Detected
+                {% elif result.risk_level == 'Medium' %}
+                    Moderate Fake Review Activity
+                {% else %}
+                    Reviews Appear Mostly Genuine
+                {% endif %}
+            </div>
+            <div class="ov-desc">
+                {{ result.fake_pct }}% of scraped reviews were flagged as suspicious.
+                {% if result.risk_level == 'High' %}
+                    This product has a very high proportion of potentially fake reviews. Customer trust may be artificially inflated.
+                {% elif result.risk_level == 'Medium' %}
+                    Some reviews show suspicious patterns. Read carefully before purchasing.
+                {% else %}
+                    Most reviews appear authentic with balanced language and natural sentiment.
+                {% endif %}
+            </div>
+        </div>
+        <!-- Fake rate meter -->
+        <div class="ov-meter">
+            <div class="ov-meter-track">
+                <div class="ov-meter-fill" style="width:{{ result.fake_pct }}%"></div>
+            </div>
+            <div class="ov-meter-label">{{ result.fake_pct }}% fake rate</div>
+        </div>
+    </div>
+
+    <!-- Review Filter Tabs -->
+    <div class="review-tabs">
+        <button class="rtab active" data-filter="all">All ({{ result.total }})</button>
+        <button class="rtab" data-filter="fake">⚠ Fake ({{ result.fake_count }})</button>
+        <button class="rtab" data-filter="genuine">✓ Genuine ({{ result.genuine_count }})</button>
+    </div>
+
+    <!-- Review Cards -->
+    <div class="scraped-reviews" id="reviewsList">
+        {% for rev in result.reviews %}
+        <div class="scraped-review-card {% if rev.is_fake %}src-fake{% else %}src-genuine{% endif %}"
+             data-type="{% if rev.is_fake %}fake{% else %}genuine{% endif %}">
+            <div class="src-header">
+                <div class="src-left">
+                    <div class="src-avatar">{{ rev.reviewer_name[0].upper() if rev.reviewer_name else "?" }}</div>
+                    <div>
+                        <div class="src-name">{{ rev.reviewer_name }}</div>
+                        <div class="src-stars">
+                            {% for i in range(rev.rating) %}★{% endfor %}{% for i in range(5 - rev.rating) %}☆{% endfor %}
+                            <span class="src-rating-num">{{ rev.rating }}/5</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="src-right">
+                    <div class="src-verdict-badge {% if rev.is_fake %}svb-fake{% else %}svb-genuine{% endif %}">
+                        {{ "⚠ FAKE" if rev.is_fake else "✓ Genuine" }}
+                    </div>
+                    <div class="src-risk-bar">
+                        <div class="srb-fill {% if rev.confidence >= 70 %}srb-high{% elif rev.confidence >= 40 %}srb-med{% else %}srb-low{% endif %}"
+                             style="width:{{ rev.confidence }}%"></div>
+                    </div>
+                    <div class="src-score">{{ rev.confidence }}% risk</div>
+                </div>
+            </div>
+            <div class="src-text">{{ rev.review_text }}</div>
+            {% if rev.flags %}
+            <div class="src-flags">
+                {% for flag in rev.flags %}
+                <span class="sflag">🚩 {{ flag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% elif scrape_result and not scrape_result.success %}
+<!-- Error / Blocked state -->
+<div class="scrape-error-card {% if scrape_result.blocked %}error-blocked{% endif %}">
+    <div class="sec-icon">{{ "🚫" if scrape_result.blocked else "❌" }}</div>
+    <div class="sec-title">{{ "Scraping Blocked" if scrape_result.blocked else "Scraping Failed" }}</div>
+    <div class="sec-msg">{{ scrape_result.error }}</div>
+    {% if scrape_result.blocked %}
+    <div class="sec-tips">
+        <div class="sec-tips-title">How to fix this:</div>
+        <ul>
+            <li>Use a <strong>VPN</strong> before running the scraper</li>
+            <li>Use a proxy service: <strong>ScraperAPI</strong> (scraperapi.com) offers a free tier</li>
+            <li>Add <code>SCRAPER_API_KEY = "your_key"</code> to the scraper config</li>
+            <li>For Meesho / Google Shopping, install <strong>Selenium + ChromeDriver</strong></li>
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- How Scraping Works -->
+{% if not result %}
+<div class="scrape-info-grid">
+    <div class="sig-card">
+        <div class="sig-step">01</div>
+        <h3>Paste URL</h3>
+        <p>Copy the product page URL from Amazon, Flipkart, Meesho, or Google Shopping and paste it above.</p>
+    </div>
+    <div class="sig-card">
+        <div class="sig-step">02</div>
+        <h3>Auto-Fetch</h3>
+        <p>FakeShield visits the page, extracts reviewer names, review text, and star ratings — up to 30 reviews.</p>
+    </div>
+    <div class="sig-card">
+        <div class="sig-step">03</div>
+        <h3>ML Analysis</h3>
+        <p>Each review is scored across 11 fake signals. A fraud risk score is assigned to every review.</p>
+    </div>
+    <div class="sig-card">
+        <div class="sig-step">04</div>
+        <h3>Verdict</h3>
+        <p>See the overall product fake-review rate and a card for each review showing why it was flagged.</p>
+    </div>
+</div>
+
+<div class="example-urls">
+    <div class="eu-title">📋 Example URLs to try</div>
+    <div class="eu-list">
+        <div class="eu-item" onclick="setUrl(this)">https://www.amazon.in/dp/B09W9H22BQ</div>
+        <div class="eu-item" onclick="setUrl(this)">https://www.flipkart.com/apple-iphone-15/p/itm6ac5b1682af6d</div>
+        <div class="eu-item" onclick="setUrl(this)">https://meesho.com/women-kurti/p/123456789</div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Site auto-detection
+const urlInput = document.getElementById("productUrl");
+const siteDetect = document.getElementById("siteDetect");
+const siteMap = {
+    "amazon.in": { name: "Amazon India", icon: "🛒", color: "#ff9900" },
+    "amazon.com": { name: "Amazon", icon: "🛒", color: "#ff9900" },
+    "flipkart.com": { name: "Flipkart", icon: "🏪", color: "#2874f0" },
+    "meesho.com": { name: "Meesho", icon: "🛍", color: "#9b59b6" },
+    "google.com": { name: "Google Shopping", icon: "🔍", color: "#4285f4" },
+};
+
+if (urlInput) {
+    urlInput.addEventListener("input", () => {
+        const val = urlInput.value.toLowerCase();
+        let detected = null;
+        for (const [domain, info] of Object.entries(siteMap)) {
+            if (val.includes(domain)) { detected = info; break; }
+        }
+        if (detected) {
+            siteDetect.innerHTML = `<span style="color:${detected.color}">${detected.icon} Detected: <strong>${detected.name}</strong> — Ready to scrape</span>`;
+        } else if (val.length > 10) {
+            siteDetect.innerHTML = `<span style="color:#e84b3a">⚠ Unrecognised site. Supported: Amazon India, Flipkart, Meesho, Google Shopping</span>`;
+        } else {
+            siteDetect.innerHTML = "";
+        }
+    });
+    // Trigger on load if URL pre-filled
+    if (urlInput.value) urlInput.dispatchEvent(new Event("input"));
+}
+
+// Show loading on submit
+const scrapeForm = document.getElementById("scrapeForm");
+const scrapeLoading = document.getElementById("scrapeLoading");
+const scrapeBtn = document.getElementById("scrapeBtn");
+if (scrapeForm) {
+    scrapeForm.addEventListener("submit", () => {
+        scrapeLoading.style.display = "flex";
+        scrapeBtn.disabled = true;
+        document.getElementById("scrapeLabel").textContent = "Scraping…";
+    });
+}
+
+// Review filter tabs
+document.querySelectorAll(".rtab").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".rtab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const filter = btn.dataset.filter;
+        document.querySelectorAll(".scraped-review-card").forEach(card => {
+            card.style.display = (filter === "all" || card.dataset.type === filter) ? "" : "none";
+        });
+    });
+});
+
+function setUrl(el) {
+    if (urlInput) {
+        urlInput.value = el.textContent;
+        urlInput.dispatchEvent(new Event("input"));
+        urlInput.focus();
+    }
+}
+
+// Animate risk bars on load
+window.addEventListener("load", () => {
+    document.querySelectorAll(".srb-fill, .ov-meter-fill").forEach(el => {
+        const w = el.style.width; el.style.width = "0";
+        setTimeout(() => { el.style.width = w; }, 200);
+    });
+});
+</script>
+{% endblock %}

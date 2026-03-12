@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – FakeShield{% endblock %}
+{% block content %}
+
+<section class="hero">
+    <div class="hero-text">
+        <span class="hero-badge">ML-Powered Detection</span>
+        <h1>Detect Fake Reviews<br><em>Before They Mislead You</em></h1>
+        <p>FakeShield analyses review text, rating patterns, and user behaviour to identify suspicious content on e-commerce platforms.</p>
+        <div class="hero-actions">
+            <a href="/analyze" class="btn btn-primary">Analyze a Review</a>
+            <a href="/products" class="btn btn-outline">Browse Products</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="verdict-card verdict-fake anim-float">
+            <div class="vc-icon">⚠</div>
+            <div class="vc-label">FAKE REVIEW DETECTED</div>
+            <div class="vc-score">Risk Score: 91%</div>
+            <div class="vc-flags">
+                <span class="flag">Repeated superlatives</span>
+                <span class="flag">Hard-sell language</span>
+                <span class="flag">No negatives</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="stats-bar">
+    <div class="stat-item">
+        <div class="stat-num">{{ stats.total_reviews or 0 }}</div>
+        <div class="stat-label">Total Reviews</div>
+    </div>
+    <div class="stat-item stat-danger">
+        <div class="stat-num">{{ stats.fake_count or 0 }}</div>
+        <div class="stat-label">Fake Detected</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">{{ stats.products_reviewed or 0 }}</div>
+        <div class="stat-label">Products Analysed</div>
+    </div>
+    <div class="stat-item {% if (stats.avg_risk or 0) > 40 %}stat-danger{% endif %}">
+        <div class="stat-num">{{ stats.avg_risk or 0 }}%</div>
+        <div class="stat-label">Avg. Risk Score</div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="section">
+    <h2 class="section-title">How Detection Works</h2>
+    <div class="cards-grid">
+        <div class="info-card">
+            <div class="info-icon">📝</div>
+            <h3>Text Analysis</h3>
+            <p>Scans review text for suspicious language patterns – excessive superlatives, repetition, urgency phrases, and hard-sell keywords.</p>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">⭐</div>
+            <h3>Rating Pattern</h3>
+            <p>Compares star rating against review sentiment to catch mismatches. A 5-star review with zero constructive feedback is a red flag.</p>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">👤</div>
+            <h3>Reviewer Behaviour</h3>
+            <p>Checks reviewer username patterns, sponsored disclosures, and writing style to flag bot-generated or incentivised reviews.</p>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">🤖</div>
+            <h3>ML Scoring</h3>
+            <p>Combines all signals into a fraud risk score (0–100%). Reviews scoring ≥ 40% are flagged as potentially fake.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Products -->
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Products</h2>
+        <a href="/products" class="btn btn-sm btn-outline">View All →</a>
+    </div>
+    <div class="product-list">
+        {% for p in products[:4] %}
+        <a href="/product/{{ p.id }}" class="product-row">
+            <div class="pr-icon">{{ p.category[0] if p.category else "P" }}</div>
+            <div class="pr-info">
+                <div class="pr-name">{{ p.name }}</div>
+                <div class="pr-cat">{{ p.category }}</div>
+            </div>
+            <span class="pr-arrow">→</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Products – FakeShield{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Products</h1>
+    <a href="/add_product" class="btn btn-primary">+ Add Product</a>
+</div>
+
+<div class="products-grid">
+    {% for p in products %}
+    <div class="pcard">
+        <div class="pcard-top">
+            <div class="pcard-cat-badge">{{ p.category or "General" }}</div>
+            <div class="pcard-risk {% if (p.avg_risk_score or 0) >= 60 %}risk-high{% elif (p.avg_risk_score or 0) >= 30 %}risk-med{% else %}risk-low{% endif %}">
+                {{ p.avg_risk_score or 0 }}% risk
+            </div>
+        </div>
+        <h3 class="pcard-name">{{ p.name }}</h3>
+        <p class="pcard-desc">{{ p.description[:80] }}{% if p.description and p.description|length > 80 %}…{% endif %}</p>
+        <div class="pcard-stats">
+            <span>⭐ {{ p.avg_rating or "—" }}</span>
+            <span>{{ p.review_count or 0 }} reviews</span>
+            <span class="{% if (p.fake_count or 0) > 0 %}text-danger{% endif %}">
+                ⚠ {{ p.fake_count or 0 }} fake
+            </span>
+        </div>
+        <div class="pcard-footer">
+            <a href="/product/{{ p.id }}" class="btn btn-sm btn-outline">View Details →</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="es-icon">📦</div>
+        <p>No products yet. <a href="/add_product">Add the first one.</a></p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
